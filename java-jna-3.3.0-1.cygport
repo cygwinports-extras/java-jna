@@ -1,0 +1,24 @@
+GIT_URI="git://github.com/twall/jna.git"
+GIT_TAG=${PV}
+inherit ant git
+
+DESCRIPTION="Java Native Access library"
+HOMEPAGE="https://github.com/twall/jna"
+
+SRC_DIR="jna/jnalib"
+PATCH_URI="3.3.0-cygwin.patch"
+
+ANT_BUILD_TARGETS="jar javadoc"
+ANT_BUILD_ARGS="-Ddynlink.native=true -Djar=jna-${PV}.jar -Dnative.jar=jna-platform-${PV}.jar"
+ANT_TEST_ARGS="${ANT_BUILD_ARGS} -Dlibs.junit.classpath=${JAVA_DIR}/junit.jar"
+
+src_install() {
+	cd ${B}
+	dobin build/native/cygjnidispatch.dll
+	# Java does not preserve executable perms on the DLL in platform jar,
+	# and the latter is needed only for Java Web Start
+	dojar build/jna-${PV}.jar
+	dojavadoc doc/javadoc
+}
+
+DOCS="../LICENSE ../*.md"

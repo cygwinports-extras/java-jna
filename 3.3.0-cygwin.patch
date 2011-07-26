@@ -1,0 +1,162 @@
+--- origsrc/jna/jnalib/build.xml	2011-07-25 13:05:44.000000000 -0500
++++ src/jna/jnalib/build.xml	2011-07-25 22:49:33.198701600 -0500
+@@ -45,7 +45,7 @@
+   <property name="jni.revision" value="0"/>
+   <property name="jni.build" value="${build.number}"/>
+   <property name="jni.version" value="${jni.major}.${jni.minor}.${jni.revision}"/>
+-  <property name="jni.md5" value="4c69bcf40b30785215211b5a5dad211e"/>
++  <property name="jni.md5" value="4cde8cda827ddae6f4fc82f742f0be06"/>
+   <property name="spec.title" value="Java Native Access (JNA)"/>
+   <property name="spec.vendor" value="${vendor}"/>
+   <property name="spec.version" value="${jna.major}"/>
+@@ -133,6 +133,17 @@
+     <condition property="os.prefix" value="openbsd-${os.arch}">
+       <os name="OpenBSD"/>
+     </condition>
++    <condition property="os.prefix" value="cygwin-${os.arch}">
++      <or>
++        <os name="CYGWIN_NT-5.0"/>
++        <os name="CYGWIN_NT-5.1"/>
++        <os name="CYGWIN_NT-5.2"/>
++        <os name="CYGWIN_NT-6.0"/>
++        <os name="CYGWIN_NT-6.0-WOW64"/>
++        <os name="CYGWIN_NT-6.1"/>
++        <os name="CYGWIN_NT-6.1-WOW64"/>
++      </or>
++    </condition>
+     <fail unless="os.prefix" message="OS/arch not supported (${os.name}/${os.arch}), edit build.xml and native/Makefile to add it."/>
+     <condition property="jdk.home" value="${java.home}">
+       <available file="${java.home}/include"/>
+@@ -401,18 +412,18 @@
+     <mkdir dir="${classes}/com/sun/jna/${os.prefix}"/>
+     <copy todir="${classes}/com/sun/jna/${os.prefix}">
+       <fileset dir="${build.native}"
+-               includes="jnidispatch.dll,libjnidispatch.*"/>
++               includes="*jnidispatch.dll,libjnidispatch.*"/>
+     </copy>
+     <mkdir dir="${eclipse.classes}/com/sun/jna/${os.prefix}"/>
+     <copy todir="${eclipse.classes}/com/sun/jna/${os.prefix}"
+           failonerror="false">
+       <fileset dir="${build.native}"
+-               includes="jnidispatch.dll,libjnidispatch.*"/>
++               includes="*jnidispatch.dll,libjnidispatch.*"/>
+     </copy>
+     <!-- For web start, native libraries may be provided in the root of -->
+     <!-- an included jar file -->
+     <jar jarfile="${build}/${native.jar}">
+-      <fileset dir="${build.native}" includes="jnidispatch.dll,libjnidispatch.*"/>
++      <fileset dir="${build.native}" includes="*jnidispatch.dll,libjnidispatch.*"/>
+       <manifest>
+         <attribute name="Implementation-Version" value="${jni.version} b${jni.build}"/>
+         <attribute name="Specification-Version" value="${jni.version}"/>
+--- origsrc/jna/jnalib/contrib/platform/nbproject/build-impl.xml	2011-07-25 13:05:45.000000000 -0500
++++ src/jna/jnalib/contrib/platform/nbproject/build-impl.xml	2011-07-25 22:37:30.168640900 -0500
+@@ -123,7 +123,7 @@ is divided into following sections:
+             <attribute name="debug" default="${javac.debug}"/>
+             <element name="customize" optional="true"/>
+             <sequential>
+-                <javac srcdir="@{srcdir}" destdir="@{destdir}" debug="@{debug}" deprecation="${javac.deprecation}" source="${javac.source}" target="${javac.target}" includeantruntime="false">
++                <javac srcdir="@{srcdir}" destdir="@{destdir}" debug="@{debug}" deprecation="${javac.deprecation}" source="${javac.source}" target="${javac.target}" includeantruntime="false" fork="yes">
+                     <classpath>
+                         <path path="@{classpath}"/>
+                     </classpath>
+--- origsrc/jna/jnalib/contrib/platform/nbproject/project.properties	2011-07-25 13:05:45.000000000 -0500
++++ src/jna/jnalib/contrib/platform/nbproject/project.properties	2011-07-25 22:35:07.927592900 -0500
+@@ -24,8 +24,8 @@ javac.classpath=\
+ # Space-separated list of extra javac options
+ javac.compilerargs=
+ javac.deprecation=false
+-javac.source=1.5
+-javac.target=1.5
++javac.source=1.6
++javac.target=1.6
+ javac.test.classpath=\
+     ${javac.classpath}:\
+     ${build.classes.dir}:\
+--- origsrc/jna/jnalib/native/Makefile	2011-07-25 13:05:46.000000000 -0500
++++ src/jna/jnalib/native/Makefile	2011-07-25 22:55:29.830923400 -0500
+@@ -20,7 +20,8 @@
+ # protection simply by defining HAVE_PROTECTION.  This has been enabled
+ # only for those platforms on which it has been tested successfully.
+ 
+-OS=$(shell uname | sed -e 's/\(CYGWIN\|MINGW32\).*/win32/g' \
++OS=$(shell uname | sed -e 's/MINGW32.*/win32/g' \
++                        -e 's/CYGWIN.*/cygwin/g' \
+                         -e 's/SunOS.*/solaris/g' \
+                         -e 's/FreeBSD.*/freebsd/g' \
+                         -e 's/OpenBSD.*/openbsd/g' \
+@@ -125,6 +126,14 @@ endif
+ endif
+ endif
+ 
++ifeq ($(OS),cygwin)
++ARCH=$(shell uname -m | sed 's/i.86/i386/g')
++LDFLAGS=-o $@ -shared 
++LIBPFX=cyg
++LIBSFX=.dll
++JAVA_INCLUDES=
++endif
++
+ ifeq ($(OS),linux)
+ ARCH=$(shell uname -m | sed 's/i.86/i386/g')
+ PCFLAGS+=-fPIC
+--- origsrc/jna/jnalib/native/dispatch.c	2011-07-25 13:05:46.000000000 -0500
++++ src/jna/jnalib/native/dispatch.c	2011-07-26 00:25:56.136578200 -0500
+@@ -2081,7 +2081,11 @@ Java_com_sun_jna_Native_initIDs(JNIEnv *
+ #define JAWT_NAME "jawt.dll"
+ #define METHOD_NAME (sizeof(void*)==4?"_JAWT_GetAWT@8":"JAWT_GetAWT")
+ #else
++#ifdef __CYGWIN__
++#define JAWT_NAME "cygjawt.dll"
++#else
+ #define JAWT_NAME "libjawt.so"
++#endif
+ #define METHOD_NAME "JAWT_GetAWT"
+ #endif
+ static void* jawt_handle = NULL;
+--- origsrc/jna/jnalib/src/com/sun/jna/NativeLibrary.java	2011-07-25 13:05:47.000000000 -0500
++++ src/jna/jnalib/src/com/sun/jna/NativeLibrary.java	2011-07-25 22:55:29.846523400 -0500
+@@ -227,6 +227,13 @@ public class NativeLibrary {
+         if (Platform.isLinux() && "c".equals(libraryName)) {
+             libraryName = null;
+         }
++        if (Platform.isCygwin()) {
++            if ("c".equals(libraryName) || "dl".equals(libraryName) ||
++                "m".equals(libraryName) || "pthread".equals(libraryName) ||
++                "resolv".equals(libraryName) || "rt".equals(libraryName) ||
++                "util".equals(libraryName))
++                libraryName = "/usr/bin/cygwin1.dll";
++        }
+         synchronized (libraries) {
+             WeakReference ref = (WeakReference)libraries.get(libraryName + options);
+             NativeLibrary library = ref != null ? (NativeLibrary)ref.get() : null;
+--- origsrc/jna/jnalib/src/com/sun/jna/Platform.java	2011-07-25 13:05:47.000000000 -0500
++++ src/jna/jnalib/src/com/sun/jna/Platform.java	2011-07-25 22:55:29.846523400 -0500
+@@ -19,6 +19,7 @@ public final class Platform {
+     public static final int FREEBSD = 4;
+     public static final int OPENBSD = 5;
+     public static final int WINDOWSCE = 6;
++    public static final int CYGWIN = 7;
+ 
+     private static final int osType;
+     
+@@ -30,6 +31,9 @@ public final class Platform {
+         else if (osName.startsWith("Mac") || osName.startsWith("Darwin")) {
+             osType = MAC;
+         }
++        else if (osName.startsWith("CYGWIN")) {
++            osType = CYGWIN;
++        } 
+         else if (osName.startsWith("Windows CE")) {
+             osType = WINDOWSCE;
+         }
+@@ -59,6 +63,9 @@ public final class Platform {
+     public static final boolean isLinux() {
+         return osType == LINUX;
+     }
++    public static final boolean isCygwin() {
++        return osType == CYGWIN;
++    }
+     public static final boolean isWindowsCE() {
+         return osType == WINDOWSCE;
+     }
