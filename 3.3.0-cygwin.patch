@@ -1,14 +1,5 @@
 --- origsrc/jna/jnalib/build.xml	2011-07-25 13:05:44.000000000 -0500
 +++ src/jna/jnalib/build.xml	2011-07-25 22:49:33.198701600 -0500
-@@ -45,7 +45,7 @@
-   <property name="jni.revision" value="0"/>
-   <property name="jni.build" value="${build.number}"/>
-   <property name="jni.version" value="${jni.major}.${jni.minor}.${jni.revision}"/>
--  <property name="jni.md5" value="4c69bcf40b30785215211b5a5dad211e"/>
-+  <property name="jni.md5" value="4cde8cda827ddae6f4fc82f742f0be06"/>
-   <property name="spec.title" value="Java Native Access (JNA)"/>
-   <property name="spec.vendor" value="${vendor}"/>
-   <property name="spec.version" value="${jna.major}"/>
 @@ -133,6 +133,17 @@
      <condition property="os.prefix" value="openbsd-${os.arch}">
        <os name="OpenBSD"/>
@@ -75,16 +66,15 @@
      ${build.classes.dir}:\
 --- origsrc/jna/jnalib/native/Makefile	2011-07-25 13:05:46.000000000 -0500
 +++ src/jna/jnalib/native/Makefile	2011-07-25 22:55:29.830923400 -0500
-@@ -20,7 +20,8 @@
- # protection simply by defining HAVE_PROTECTION.  This has been enabled
- # only for those platforms on which it has been tested successfully.
+@@ -20,7 +20,7 @@
+ # protection simply by defining HAVE_PROTECTION.  This option has been only
+ # been enabled for those platforms on which it has been tested successfully.
  
--OS=$(shell uname | sed -e 's/\(CYGWIN\|MINGW32\).*/win32/g' \
-+OS=$(shell uname | sed -e 's/MINGW32.*/win32/g' \
-+                        -e 's/CYGWIN.*/cygwin/g' \
+-OS=$(shell uname | sed -e 's/CYGWIN.*/win32/g' \
++OS=$(shell uname | sed -e 's/CYGWIN.*/cygwin/g' \
+ 	                -e 's/MINGW32.*/win32/g' \
                          -e 's/SunOS.*/solaris/g' \
-                         -e 's/FreeBSD.*/freebsd/g' \
-                         -e 's/OpenBSD.*/openbsd/g' \
+                         -e 's/NetBSD/netbsd/g' \
 @@ -125,6 +126,14 @@ endif
  endif
  endif
@@ -133,10 +123,10 @@
 --- origsrc/jna/jnalib/src/com/sun/jna/Platform.java	2011-07-25 13:05:47.000000000 -0500
 +++ src/jna/jnalib/src/com/sun/jna/Platform.java	2011-07-25 22:55:29.846523400 -0500
 @@ -19,6 +19,7 @@ public final class Platform {
-     public static final int FREEBSD = 4;
      public static final int OPENBSD = 5;
      public static final int WINDOWSCE = 6;
-+    public static final int CYGWIN = 7;
+     public static final int AIX = 7;
++    public static final int CYGWIN = 8;
  
      private static final int osType;
      

@@ -1,8 +1,0 @@
-category: Java
-requires: libffi4
-sdesc: "Java Native Access"
-ldesc: "JNA provides Java programs easy access to native shared 
-libraries (DLLs on Windows) without writing anything but Java code-no 
-JNI or native code is required. This functionality is comparable to 
-Windows' Platform/Invoke and Python's ctypes. Access is dynamic at 
-runtime without code generation."

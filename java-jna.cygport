@@ -2,11 +2,22 @@ GIT_URI="git://github.com/twall/jna.git"
 GIT_TAG=${PV}
 inherit ant git
 
-DESCRIPTION="Java Native Access library"
+NAME="java-jna"
+VERSION=3.4.2
+RELEASE=1
+CATEGORY="Java"
+SUMMARY="Java Native Access"
+DESCRIPTION="JNA provides Java programs easy access to native shared libraries
+(DLLs on Windows) without writing anything but Java code -- no JNI or native
+code is required. This functionality is comparable to Windows Platform/Invoke
+and Python ctypes. Access is dynamic at runtime without code generation."
 HOMEPAGE="https://github.com/twall/jna"
 
-SRC_DIR="jna/jnalib"
 PATCH_URI="3.3.0-cygwin.patch"
+
+PKG_NAMES="${NAME} javadoc-jna"
+java_jna_CONTENTS="usr/bin/ usr/share/doc/ ${JAVA_DIR#/}"
+javadoc_jna_CONTENTS=${JAVADOC_DIR#/}
 
 ANT_BUILD_TARGETS="jar javadoc"
 ANT_BUILD_ARGS="-Ddynlink.native=true -Djar=jna-${PV}.jar -Dnative.jar=jna-platform-${PV}.jar"
