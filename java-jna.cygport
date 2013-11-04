@@ -25,10 +25,10 @@ ANT_TEST_ARGS="${ANT_BUILD_ARGS} -Dlibs.junit.classpath=${JAVA_DIR}/junit.jar"
 
 src_install() {
 	cd ${B}
-	dobin build/native/cygjnidispatch.dll
+	dobin build${ARCH_x86_64+-d64}/native/cygjnidispatch.dll
 	# Java does not preserve executable perms on the DLL in platform jar,
 	# and the latter is needed only for Java Web Start
-	dojar build/jna-${PV}.jar
+	dojar build${ARCH_x86_64+-d64}/jna-${VERSION}.jar
 	dojavadoc doc/javadoc
 }
 
